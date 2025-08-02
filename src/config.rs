@@ -1,34 +1,43 @@
-use anyhow::Result;
-use dotenv::dotenv;
-use log::info;
+use crate::error::{AppError, AppResult};
+use serde::{Deserialize, Serialize};
+use std::env;
 
-mod config;
-mod error;
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Config {
+    pub solana_ws_url: String,
+    pub solana_rpc_url: String,
+    pub websocket_port: u16,
+    pub pumpfun_program_id: String,
+    pub max_retries: u32,
+    pub retry_delay_ms: u64,
+    pub rate_limit_per_minute: u32,
+}
 
-use config::Config;
-
-#[tokio::main]
-async fn main() -> Result<()> {
-    // Load environment variables
-    dotenv().ok();
-    
-    // Initialize logger
-    env_logger::init();
-    
-    info!("Starting pump.fun WebSocket monitor service");
-    
-    // Load configuration
-    let config = Config::from_env()?;
-    info!("Configuration loaded successfully");
-    info!("WebSocket port: {}", config.websocket_port);
-    info!("Solana WS URL: {}", config.solana_ws_url);
-    
-    // Placeholder for actual service implementation
-    info!("Service components will be added in upcoming commits");
-    
-    // Keep service running briefly to demonstrate
-    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
-    
-    info!("Service completed successfully");
-    Ok(())
+impl Config {
+    pub fn from_env() -> AppResult<Self> {
+        Ok(Config {
+            solana_ws_url: env::var("SOLANA_WS_URL")
+                .unwrap_or_else(|_| "wss://api.mainnet-beta.solana.com".to_string()),
+            solana_rpc_url: env::var("SOLANA_RPC_URL")
+                .unwrap_or_else(|_| "https://api.mainnet-beta.solana.com".to_string()),
+            websocket_port: env::var("WEBSOCKET_PORT")
+                .unwrap_or_else(|_| "8080".to_string())
+                .parse()
+                .map_err(|e| AppError::ConfigError(format!("Invalid port: {}", e)))?,
+            pumpfun_program_id: env::var("PUMPFUN_PROGRAM_ID")
+                .unwrap_or_else(|_| "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P".to_string()),
+            max_retries: env::var("MAX_RETRIES")
+                .unwrap_or_else(|_| "5".to_string())
+                .parse()
+                .map_err(|e| AppError::ConfigError(format!("Invalid max_retries: {}", e)))?,
+            retry_delay_ms: env::var("RETRY_DELAY_MS")
+                .unwrap_or_else(|_| "5000".to_string())
+                .parse()
+                .map_err(|e| AppError::ConfigError(format!("Invalid retry_delay_ms: {}", e)))?,
+            rate_limit_per_minute: env::var("RATE_LIMIT_PER_MINUTE")
+                .unwrap_or_else(|_| "60".to_string())
+                .parse()
+                .map_err(|e| AppError::ConfigError(format!("Invalid rate_limit: {}", e)))?,
+        })
+    }
 }

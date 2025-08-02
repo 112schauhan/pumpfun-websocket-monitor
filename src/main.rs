@@ -1,4 +1,3 @@
-use anyhow::Result;
 use chrono::Utc;
 use futures_util::{SinkExt, StreamExt};
 use log::{error, info, warn};
@@ -8,12 +7,19 @@ use tokio_tungstenite::{accept_async, tungstenite::Message};
 
 use serde_json;
 
+mod config;
+mod error;
 mod types;
 
+use dotenv::dotenv;
+use config::Config;
+use error::AppResult;
 use types::{ClientMessage, ServerMessage, TokenCreatedEvent, TokenInfo, PumpData};
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> AppResult<()> {
+
+    dotenv().ok();
     // Initialize logger
     env_logger::init();
     
@@ -22,9 +28,12 @@ async fn main() -> Result<()> {
     
     // Demonstrate our types work correctly
     demonstrate_types();
+    let config: Config = Config::from_env()?;
+    info!("Configuration loaded successfully");
+    info!("WebSocket port: {}", config.websocket_port);
     
     // Start basic WebSocket server
-    let addr = "127.0.0.1:8080";
+    let addr = format!("127.0.0.1:{}", config.websocket_port);
     let listener = TcpListener::bind(&addr).await?;
     info!("WebSocket server listening on: {}", addr);
     info!("Connect with: wscat -c ws://127.0.0.1:8080");
