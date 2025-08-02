@@ -319,3 +319,49 @@ impl WebSocketServer {
             .collect()
     }
 }
+
+/// Broadcast event to all connected clients with per-client filter support
+async fn broadcast_event(
+    clients: &Arc<RwLock<HashMap<String, ClientConnection>>>,
+    event: &TokenCreatedEvent,
+) {
+    // Prepare snapshot with client filters
+    let clients_snapshot: Vec<(String, tokio::sync::mpsc::UnboundedSender<Message>, HashMap<String, serde_json::Value>)> = {
+        let guard = clients.read();
+        guard.iter()
+            .map(|(id, conn)| (id.clone(), conn.sender.clone(), conn.info.filters.clone()))
+            .collect()
+    };
+
+    if !clients_snapshot.is_empty() {
+        let event_message = ServerMessage::TokenCreated(event.clone());
+        if let Ok(event_json) = serde_json::to_string(&event_message) {
+            let message = Message::Text(event_json);
+
+            for (client_id, sender, filters) in clients_snapshot {
+                // Example filter: min_supply
+                let mut filtered_out = false;
+                if let Some(min_supply) = filters
+                    .get("min_supply")
+                    .and_then(|v| v.as_u64())
+                {
+                    if event.token.supply < min_supply {
+                        filtered_out = true;
+                    }
+                }
+                // Implement additional filters as needed...
+
+                if filtered_out {
+                    continue;
+                }
+
+                if sender.send(message.clone()).is_err() {
+                    // Send failed - client will be cleaned up in cleanup task
+                    debug!("Failed to send to client {}, will be cleaned up", client_id);
+                }
+            }
+        }
+    }
+
+    info!("Broadcasted event to {} clients", clients.read().len());
+}

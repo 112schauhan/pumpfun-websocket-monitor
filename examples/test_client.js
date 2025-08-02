@@ -1,6 +1,6 @@
 const WebSocket = require("ws")
 
-const WS_URL = process.argv[2] || "ws://localhost:8080"
+const WS_URL = process.argv[2] || "ws://localhost:8081"
 
 console.log(`Connecting to ${WS_URL}...`)
 

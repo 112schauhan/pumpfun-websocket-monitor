@@ -6,7 +6,7 @@ import websockets
 from datetime import datetime
 
 class PumpFunClient:
-    def __init__(self, url="ws://localhost:8080"):
+    def __init__(self, url="ws://localhost:8081"):
         self.url = url
         self.websocket = None
         self.running = False
@@ -118,7 +118,7 @@ class PumpFunClient:
 
 async def main():
     # Get WebSocket URL from command line or use default
-    url = sys.argv[1] if len(sys.argv) > 1 else "ws://localhost:8080"
+    url = sys.argv[1] if len(sys.argv) > 1 else "ws://localhost:8081"
     
     client = PumpFunClient(url)
     

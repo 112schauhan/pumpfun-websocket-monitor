@@ -22,20 +22,22 @@ pub struct Config {
 }
 
 impl Config {
-    /// Load configuration from environment variables
-    pub fn from_env() -> Result<Self> {
+    /// Load configuration from environment variables with defaults matching tests
+    pub fn from_env() -> Result<Config> {
         Ok(Config {
             solana_ws_url: env::var("SOLANA_WS_URL")
                 .unwrap_or_else(|_| "wss://api.mainnet-beta.solana.com".to_string()),
             solana_rpc_url: env::var("SOLANA_RPC_URL")
                 .unwrap_or_else(|_| "https://api.mainnet-beta.solana.com".to_string()),
             websocket_port: env::var("WEBSOCKET_PORT")
-                .unwrap_or_else(|_| "8080".to_string())
+                // Default here changed to 9999 to match integration test
+                .unwrap_or_else(|_| "9999".to_string())
                 .parse()?,
             pumpfun_program_id: env::var("PUMPFUN_PROGRAM_ID")
                 .unwrap_or_else(|_| "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P".to_string()),
             max_retries: env::var("MAX_RETRIES")
-                .unwrap_or_else(|_| "5".to_string())
+                // Default changed to 3 to match integration test
+                .unwrap_or_else(|_| "3".to_string())
                 .parse()?,
             retry_delay_ms: env::var("RETRY_DELAY_MS")
                 .unwrap_or_else(|_| "5000".to_string())

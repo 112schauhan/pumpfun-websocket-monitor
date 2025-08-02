@@ -123,3 +123,41 @@ pub enum ServerMessage {
     #[serde(rename = "unsubscribed")]
     Unsubscribed { message: String },
 }
+// -------------------
+// Unit test module
+// -------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::TimeZone;
+
+    #[test]
+    fn test_sample_output_serialization() {
+        let event = TokenCreatedEvent {
+            event_type: "token_created".to_string(),
+            timestamp: chrono::Utc.ymd(2024, 1, 15).and_hms(10, 30, 45),
+            transaction_signature: "5x7K8...".to_string(),
+            token: TokenInfo {
+                mint_address: "ABC123...".to_string(),
+                name: "MyToken".to_string(),
+                symbol: "MTK".to_string(),
+                creator: "DEF456...".to_string(),
+                supply: 1_000_000_000,
+                decimals: 6,
+            },
+            pump_data: PumpData {
+                bonding_curve: "GHI789...".to_string(),
+                virtual_sol_reserves: 30_000_000_000,
+                virtual_token_reserves: 1_073_000_000_000_000,
+            },
+        };
+
+        let json = serde_json::to_string_pretty(&event).unwrap();
+        println!("{}", json);
+
+        assert!(json.contains("\"event_type\": \"token_created\""));
+        assert!(json.contains("\"token\""));
+        assert!(json.contains("\"pump_data\""));
+    }
+}

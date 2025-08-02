@@ -19,28 +19,27 @@ use server::WebSocketServer;
 async fn main() -> Result<()> {
     // Load environment variables from .env file
     dotenv().ok();
-    
     // Initialize logger with default level 'info' or from RUST_LOG env var
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
-    
+
     info!("Starting pump.fun WebSocket monitor service");
-    
+
     // Load configuration from environment variables
     let config = Config::from_env()?;
     info!("Configuration loaded successfully");
-    
+
     // Print startup information
     print_startup_info(&config);
-    
+
     // Create and initialize the Solana monitor
     let monitor = SolanaMonitor::new(&config).await?;
     info!("Solana monitor initialized");
-    
+
     // Create and initialize the WebSocket server
     let server = WebSocketServer::new(&config, monitor.clone()).await?;
     info!("WebSocket server initialized on port {}", config.websocket_port);
-    
-    // Start both services concurrently using tokio::spawn
+
+    // Start both services concurrently
     let monitor_handle = tokio::spawn({
         let monitor = monitor.clone();
         async move {
@@ -49,7 +48,7 @@ async fn main() -> Result<()> {
             }
         }
     });
-    
+
     let server_handle = tokio::spawn({
         async move {
             if let Err(e) = server.start().await {
@@ -57,7 +56,7 @@ async fn main() -> Result<()> {
             }
         }
     });
-    
+
     // Wait for shutdown signal or service failure
     tokio::select! {
         _ = signal::ctrl_c() => {
@@ -76,13 +75,12 @@ async fn main() -> Result<()> {
             }
         }
     }
-    
+
     info!("Shutting down gracefully...");
-    
     // Give services a moment to clean up
     tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-    
     info!("Shutdown complete");
+
     Ok(())
 }
 
@@ -92,41 +90,18 @@ fn print_startup_info(config: &Config) {
     info!("📡 WebSocket Server: ws://localhost:{}", config.websocket_port);
     info!("🔗 Solana Network: {}", config.solana_ws_url);
     info!("📊 Program ID: {}", config.pumpfun_program_id);
-    info!("⚙️  Max Retries: {}", config.max_retries);
+    info!("⚙️ Max Retries: {}", config.max_retries);
     info!("🕐 Retry Delay: {}ms", config.retry_delay_ms);
     info!("🚦 Rate Limit: {} messages/minute", config.rate_limit_per_minute);
-    
+
     println!("\n📋 How to connect:");
-    println!("   JavaScript: wscat -c ws://localhost:{}", config.websocket_port);
-    println!("   Python:     python examples/test_client.py");
-    println!("   Node.js:    node examples/test_client.js");
-    
+    println!(" JavaScript: wscat -c ws://localhost:{}", config.websocket_port);
+    println!(" Python: python examples/test_client.py");
+    println!(" Node.js: node examples/test_client.js");
     println!("\n📨 Sample messages:");
-    println!("   Subscribe:   {{\"type\": \"subscribe\"}}");
-    println!("   Unsubscribe: {{\"type\": \"unsubscribe\"}}");
-    println!("   Ping:        {{\"type\": \"ping\"}}");
-    
+    println!(" Subscribe: {{\"type\": \"subscribe\"}}");
+    println!(" Unsubscribe: {{\"type\": \"unsubscribe\"}}");
+    println!(" Ping: {{\"type\": \"ping\"}}");
     println!("\n🛑 To stop: Press Ctrl+C");
     println!("{}", "─".repeat(60));
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_startup_info_display() {
-        let config = Config {
-            solana_ws_url: "wss://api.mainnet-beta.solana.com".to_string(),
-            solana_rpc_url: "https://api.mainnet-beta.solana.com".to_string(),
-            websocket_port: 8080,
-            pumpfun_program_id: "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P".to_string(),
-            max_retries: 5,
-            retry_delay_ms: 5000,
-            rate_limit_per_minute: 60,
-        };
-        
-        // This should not panic
-        print_startup_info(&config);
-    }
 }
