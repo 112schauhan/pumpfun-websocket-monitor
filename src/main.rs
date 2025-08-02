@@ -10,10 +10,12 @@ use serde_json;
 mod config;
 mod error;
 mod types;
+mod parser;
 
 use dotenv::dotenv;
 use config::Config;
 use error::AppResult;
+use parser::PumpFunParser;
 use types::{ClientMessage, ServerMessage, TokenCreatedEvent, TokenInfo, PumpData};
 
 #[tokio::main]
@@ -160,4 +162,30 @@ async fn handle_connection(stream: TcpStream, addr: SocketAddr) {
             error!("Failed to accept WebSocket connection from {}: {}", addr, e);
         }
     }
+}
+
+fn demonstrate_parser() {
+    info!("=== Demonstrating Parser ===");
+    
+    let mock_transactions = [
+        "pump_token_creation_123",
+        "regular_transaction_456", 
+        "pump_new_token_789"
+    ];
+    
+    for tx in &mock_transactions {
+        match PumpFunParser::parse_mock_transaction(tx) {
+            Ok(Some(event)) => {
+                info!("Parsed token creation: {} ({})", event.token.name, event.token.symbol);
+            }
+            Ok(None) => {
+                info!("No token creation in transaction: {}", tx);
+            }
+            Err(e) => {
+                warn!("Parse error for {}: {}", tx, e);
+            }
+        }
+    }
+    
+    info!("=== Parser demonstration complete ===");
 }
