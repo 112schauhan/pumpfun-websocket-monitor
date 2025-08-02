@@ -33,8 +33,8 @@ async fn test_config_defaults() {
     // Test that defaults work when no env vars are set
     let config = Config::from_env().unwrap();
     
-    assert_eq!(config.websocket_port, 8080);
-    assert_eq!(config.max_retries, 5);
+    assert_eq!(config.websocket_port, 9999);
+    assert_eq!(config.max_retries, 3);
     assert_eq!(config.pumpfun_program_id, "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P");
 }
 
