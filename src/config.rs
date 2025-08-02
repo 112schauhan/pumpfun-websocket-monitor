@@ -1,20 +1,29 @@
-use crate::error::{AppError, AppResult};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::env;
 
+/// Application configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
+    /// Solana RPC WebSocket endpoint
     pub solana_ws_url: String,
+    /// Solana RPC HTTP endpoint
     pub solana_rpc_url: String,
+    /// WebSocket server port
     pub websocket_port: u16,
+    /// Pump.fun program ID
     pub pumpfun_program_id: String,
+    /// Connection retry attempts
     pub max_retries: u32,
+    /// Retry delay in milliseconds
     pub retry_delay_ms: u64,
+    /// Client rate limit per minute
     pub rate_limit_per_minute: u32,
 }
 
 impl Config {
-    pub fn from_env() -> AppResult<Self> {
+    /// Load configuration from environment variables
+    pub fn from_env() -> Result<Self> {
         Ok(Config {
             solana_ws_url: env::var("SOLANA_WS_URL")
                 .unwrap_or_else(|_| "wss://api.mainnet-beta.solana.com".to_string()),
@@ -22,22 +31,18 @@ impl Config {
                 .unwrap_or_else(|_| "https://api.mainnet-beta.solana.com".to_string()),
             websocket_port: env::var("WEBSOCKET_PORT")
                 .unwrap_or_else(|_| "8080".to_string())
-                .parse()
-                .map_err(|e| AppError::ConfigError(format!("Invalid port: {}", e)))?,
+                .parse()?,
             pumpfun_program_id: env::var("PUMPFUN_PROGRAM_ID")
                 .unwrap_or_else(|_| "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P".to_string()),
             max_retries: env::var("MAX_RETRIES")
                 .unwrap_or_else(|_| "5".to_string())
-                .parse()
-                .map_err(|e| AppError::ConfigError(format!("Invalid max_retries: {}", e)))?,
+                .parse()?,
             retry_delay_ms: env::var("RETRY_DELAY_MS")
                 .unwrap_or_else(|_| "5000".to_string())
-                .parse()
-                .map_err(|e| AppError::ConfigError(format!("Invalid retry_delay_ms: {}", e)))?,
+                .parse()?,
             rate_limit_per_minute: env::var("RATE_LIMIT_PER_MINUTE")
                 .unwrap_or_else(|_| "60".to_string())
-                .parse()
-                .map_err(|e| AppError::ConfigError(format!("Invalid rate_limit: {}", e)))?,
+                .parse()?,
         })
     }
 }
